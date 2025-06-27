@@ -13,8 +13,7 @@ const app = express();
 
 // ✅ Allow frontend to access backend
 app.use(cors({
-  origin: 'https://flight-finder-2g25.vercel.app',
-  credentials: true
+  origin: 'https://flight-finder-2g25.vercel.app'
 }));
 
 app.use(express.json());
