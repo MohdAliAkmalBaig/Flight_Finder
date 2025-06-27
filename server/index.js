@@ -11,10 +11,15 @@ dotenv.config();
 
 const app = express();
 
+// ✅ Allow frontend to access backend
+app.use(cors({
+  origin: 'https://flight-finder-2g25.vercel.app',
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(bodyParser.json({ limit: '30mb', extended: true }));
 app.use(bodyParser.urlencoded({ limit: '30mb', extended: true }));
-app.use(cors());
 
 const PORT = process.env.PORT || 6002;
 const MONGO_URI = process.env.MONGO_URI;
@@ -25,28 +30,18 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    // Register endpoint
+    // ---------------- User Routes ----------------
     app.post('/register', async (req, res) => {
       const { username, email, usertype, password } = req.body;
-      let approval = 'approved';
+      let approval = usertype === 'flight-operator' ? 'not-approved' : 'approved';
       try {
         const existingUser = await User.findOne({ email });
         if (existingUser) {
           return res.status(400).json({ message: 'User already exists' });
         }
 
-        if (usertype === 'flight-operator') {
-          approval = 'not-approved';
-        }
-
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({
-          username,
-          email,
-          usertype,
-          password: hashedPassword,
-          approval,
-        });
+        const newUser = new User({ username, email, usertype, password: hashedPassword, approval });
         const userCreated = await newUser.save();
         return res.status(201).json(userCreated);
       } catch (error) {
@@ -115,6 +110,7 @@ mongoose
       }
     });
 
+    // ---------------- Flight Routes ----------------
     app.post('/add-flight', async (req, res) => {
       try {
         const flight = new Flight(req.body);
@@ -155,6 +151,7 @@ mongoose
       }
     });
 
+    // ---------------- Booking Routes ----------------
     app.get('/fetch-bookings', async (req, res) => {
       try {
         const bookings = await Booking.find();
@@ -194,6 +191,7 @@ mongoose
       }
     });
 
+    // ---------------- Start Server ----------------
     app.listen(PORT, () => {
       console.log(`Running @ ${PORT}`);
     });
