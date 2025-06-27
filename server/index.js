@@ -6,20 +6,31 @@ import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import { User, Booking, Flight } from './schemas.js';
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 
-// ✅ Allow frontend to access backend
+// ✅ Allow all Vercel subdomains + main frontend
 app.use(cors({
-  origin: [
-    'https://flight-finder-2g25.vercel.app',
-    'https://flight-finder-2g25-8vz3xnik7-mohdaliakmalbaigs-projects.vercel.app'
-  ],
+  origin: function (origin, callback) {
+    // Allow localhost (e.g. Postman) or server-to-server requests
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'https://flight-finder-2g25.vercel.app'
+    ];
+
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app')
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
-
 
 app.use(express.json());
 app.use(bodyParser.json({ limit: '30mb', extended: true }));
@@ -34,10 +45,11 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    // ---------------- User Routes ----------------
+    // ✅ USER ROUTES
     app.post('/register', async (req, res) => {
       const { username, email, usertype, password } = req.body;
       let approval = usertype === 'flight-operator' ? 'not-approved' : 'approved';
+
       try {
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -49,7 +61,7 @@ mongoose
         const userCreated = await newUser.save();
         return res.status(201).json(userCreated);
       } catch (error) {
-        console.log(error);
+        console.error(error);
         return res.status(500).json({ message: 'Server Error' });
       }
     });
@@ -58,16 +70,14 @@ mongoose
       const { email, password } = req.body;
       try {
         const user = await User.findOne({ email });
-        if (!user) {
-          return res.status(401).json({ message: 'Invalid email or password' });
-        }
+        if (!user) return res.status(401).json({ message: 'Invalid email or password' });
+
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-          return res.status(401).json({ message: 'Invalid email or password' });
-        }
+        if (!isMatch) return res.status(401).json({ message: 'Invalid email or password' });
+
         return res.json(user);
       } catch (error) {
-        console.log(error);
+        console.error(error);
         return res.status(500).json({ message: 'Server Error' });
       }
     });
@@ -101,7 +111,7 @@ mongoose
         const user = await User.findById(req.params.id);
         res.json(user);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     });
 
@@ -114,14 +124,13 @@ mongoose
       }
     });
 
-    // ---------------- Flight Routes ----------------
+    // ✅ FLIGHT ROUTES
     app.post('/add-flight', async (req, res) => {
       try {
         const flight = new Flight(req.body);
         await flight.save();
         res.json({ message: 'flight added' });
       } catch (err) {
-        console.log(err);
         res.status(400).json({ message: 'Validation failed', error: err.message });
       }
     });
@@ -132,7 +141,6 @@ mongoose
         await Flight.findByIdAndUpdate(_id, rest);
         res.json({ message: 'flight updated' });
       } catch (err) {
-        console.log(err);
         res.status(400).json({ message: 'Update failed', error: err.message });
       }
     });
@@ -142,7 +150,7 @@ mongoose
         const flights = await Flight.find();
         res.json(flights);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     });
 
@@ -151,17 +159,17 @@ mongoose
         const flight = await Flight.findById(req.params.id);
         res.json(flight);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     });
 
-    // ---------------- Booking Routes ----------------
+    // ✅ BOOKING ROUTES
     app.get('/fetch-bookings', async (req, res) => {
       try {
         const bookings = await Booking.find();
         res.json(bookings);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     });
 
@@ -177,10 +185,9 @@ mongoose
 
         const booking = new Booking({ ...req.body, seats });
         await booking.save();
-
         res.json({ message: 'Booking successful!!' });
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     });
 
@@ -191,13 +198,13 @@ mongoose
         await booking.save();
         res.json({ message: 'booking cancelled' });
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     });
 
-    // ---------------- Start Server ----------------
+    // ✅ START SERVER
     app.listen(PORT, () => {
-      console.log(`Running @ ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
     });
   })
-  .catch((e) => console.log(`Error in db connection ${e}`));
+  .catch((e) => console.log(`❌ DB connection failed: ${e}`));
