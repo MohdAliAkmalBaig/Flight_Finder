@@ -4,93 +4,101 @@ import { useNavigate } from "react-router-dom";
 
 export const GeneralContext = createContext();
 
-const GeneralContextProvider = ({children}) => {
-
+const GeneralContextProvider = ({ children }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [usertype, setUsertype] = useState('');
-
   const [ticketBookingDate, setTicketBookingDate] = useState();
 
-  const inputs = {username, email, usertype, password};
-
-
+  const inputs = { username, email, usertype, password };
   const navigate = useNavigate();
 
-  const login = async () =>{
-    try{
-      const loginInputs = {email, password}
-        await axios.post('http://localhost:6002/login', loginInputs)
-        .then( async (res)=>{
+  // ✅ Use deployed backend URL
+  const BASE_URL = 'https://flight-finder-r7fx.onrender.com';
 
-            localStorage.setItem('userId', res.data._id);
-            localStorage.setItem('userType', res.data.usertype);
-            localStorage.setItem('username', res.data.username);
-            localStorage.setItem('email', res.data.email);
+  const login = async () => {
+    try {
+      const loginInputs = { email, password };
+      await axios.post(`${BASE_URL}/login`, loginInputs)
+        .then(async (res) => {
+          localStorage.setItem('userId', res.data._id);
+          localStorage.setItem('userType', res.data.usertype);
+          localStorage.setItem('username', res.data.username);
+          localStorage.setItem('email', res.data.email);
 
-            if(res.data.usertype === 'customer'){
-                navigate('/');
-            } else if(res.data.usertype === 'admin'){
-                navigate('/admin');
-            } else if(res.data.usertype === 'flight-operator'){
-              navigate('/flight-admin');
-            }
-        }).catch((err) =>{
-            alert("login failed!!");
-            console.log(err);
+          if (res.data.usertype === 'customer') {
+            navigate('/');
+          } else if (res.data.usertype === 'admin') {
+            navigate('/admin');
+          } else if (res.data.usertype === 'flight-operator') {
+            navigate('/flight-admin');
+          }
+        }).catch((err) => {
+          alert("login failed!!");
+          console.log(err);
         });
 
-    }catch(err){
-        console.log(err);
+    } catch (err) {
+      console.log(err);
     }
-  }
-  
-  const register = async () =>{
-    try{
-        await axios.post('http://localhost:6002/register', inputs)
-        .then( async (res)=>{
-            localStorage.setItem('userId', res.data._id);
-            localStorage.setItem('userType', res.data.usertype);
-            localStorage.setItem('username', res.data.username);
-            localStorage.setItem('email', res.data.email);
+  };
 
-            if(res.data.usertype === 'customer'){
-                navigate('/');
-            } else if(res.data.usertype === 'admin'){
-                navigate('/admin');
-            } else if(res.data.usertype === 'flight-operator'){
-              navigate('/flight-admin');
-            }
+  const register = async () => {
+    try {
+      await axios.post(`${BASE_URL}/register`, inputs)
+        .then(async (res) => {
+          localStorage.setItem('userId', res.data._id);
+          localStorage.setItem('userType', res.data.usertype);
+          localStorage.setItem('username', res.data.username);
+          localStorage.setItem('email', res.data.email);
 
-        }).catch((err) =>{
-            alert("registration failed!!");
-            console.log(err);
+          if (res.data.usertype === 'customer') {
+            navigate('/');
+          } else if (res.data.usertype === 'admin') {
+            navigate('/admin');
+          } else if (res.data.usertype === 'flight-operator') {
+            navigate('/flight-admin');
+          }
+
+        }).catch((err) => {
+          alert("registration failed!!");
+          console.log(err);
         });
-    }catch(err){
-        console.log(err);
+    } catch (err) {
+      console.log(err);
     }
-  }
+  };
 
-
-
-  const logout = async () =>{
-    
+  const logout = async () => {
     localStorage.clear();
     for (let key in localStorage) {
       if (localStorage.hasOwnProperty(key)) {
         localStorage.removeItem(key);
       }
     }
-    
     navigate('/');
-  }
-
-
+  };
 
   return (
-    <GeneralContext.Provider value={{login, register, logout, username, setUsername, email, setEmail, password, setPassword, usertype, setUsertype, ticketBookingDate, setTicketBookingDate}} >{children}</GeneralContext.Provider>
-  )
-}
+    <GeneralContext.Provider value={{
+      login,
+      register,
+      logout,
+      username,
+      setUsername,
+      email,
+      setEmail,
+      password,
+      setPassword,
+      usertype,
+      setUsertype,
+      ticketBookingDate,
+      setTicketBookingDate
+    }}>
+      {children}
+    </GeneralContext.Provider>
+  );
+};
 
-export default GeneralContextProvider
+export default GeneralContextProvider;
