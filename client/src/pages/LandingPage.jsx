@@ -25,14 +25,23 @@ const LandingPage = () => {
 
   const fetchFlights = async () => {
     const current = new Date();
+    current.setHours(0, 0, 0, 0);
+
     const depDate = new Date(departureDate);
+    depDate.setHours(0, 0, 0, 0);
+
     const retDate = new Date(returnDate);
+    retDate.setHours(0, 0, 0, 0);
 
     if (!departure || !destination || !departureDate || (checkBox && !returnDate)) {
       return setError('Please fill all the inputs');
     }
 
-    if (checkBox && (depDate <= current || retDate <= depDate)) {
+    if (departure === destination) {
+      return setError("Departure and destination can't be the same.");
+    }
+
+    if (checkBox && (depDate < current || retDate <= depDate)) {
       return setError('Please check the dates');
     }
 
@@ -43,6 +52,7 @@ const LandingPage = () => {
     setError('');
     try {
       const response = await axios.get('https://flight-finder-r7fx.onrender.com/fetch-flights');
+      console.log('Fetched flights:', response.data);
       setFlights(response.data);
     } catch (err) {
       console.error(err);
@@ -62,8 +72,19 @@ const LandingPage = () => {
   const cityOptions = [
     'Chennai', 'Banglore', 'Hyderabad', 'Mumbai', 'Indore',
     'Delhi', 'Pune', 'Trivendrum', 'Bhopal', 'Kolkata',
-    'varanasi', 'Jaipur'
+    'Varanasi', 'Jaipur'
   ];
+
+  const matchingFlights = Flights.filter(f => {
+    const origin = f.origin.toLowerCase();
+    const dest = f.destination.toLowerCase();
+    const dep = departure.toLowerCase();
+    const des = destination.toLowerCase();
+
+    return checkBox
+      ? (origin === dep && dest === des) || (origin === des && dest === dep)
+      : origin === dep && dest === des;
+  });
 
   return (
     <div className="landingPage">
@@ -119,16 +140,8 @@ const LandingPage = () => {
           <div className="availableFlightsContainer">
             <h1>Available Flights</h1>
             <div className="Flights">
-              {Flights.filter(f =>
-                checkBox
-                  ? (f.origin === departure && f.destination === destination) || (f.origin === destination && f.destination === departure)
-                  : f.origin === departure && f.destination === destination
-              ).length > 0 ? (
-                Flights.filter(f =>
-                  checkBox
-                    ? (f.origin === departure && f.destination === destination) || (f.origin === destination && f.destination === departure)
-                    : f.origin === departure && f.destination === destination
-                ).map(flight => (
+              {matchingFlights.length > 0 ? (
+                matchingFlights.map(flight => (
                   <div className="Flight" key={flight._id}>
                     <div>
                       <p><b>{flight.flightName}</b></p>
