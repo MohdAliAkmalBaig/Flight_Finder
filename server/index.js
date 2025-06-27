@@ -10,24 +10,22 @@ dotenv.config();
 
 const app = express();
 
-// ✅ Allow all Vercel subdomains + main frontend
+// ✅ CORS - allow all Vercel preview domains and localhost
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow localhost (e.g. Postman) or server-to-server requests
-    if (!origin) return callback(null, true);
-    
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // allow Postman, curl, etc.
+
     const allowedOrigins = [
       'https://flight-finder-2g25.vercel.app'
     ];
 
-    if (
-      allowedOrigins.includes(origin) ||
-      origin.endsWith('.vercel.app')
-    ) {
-      return callback(null, true);
-    }
+    const isAllowed = allowedOrigins.includes(origin) || /vercel\.app$/.test(origin);
 
-    return callback(new Error('Not allowed by CORS'));
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
   },
   credentials: true
 }));
@@ -45,11 +43,17 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
+    console.log('✅ MongoDB connected');
+
     // ✅ USER ROUTES
     app.post('/register', async (req, res) => {
+      console.log('📥 /register called with:', req.body);
       const { username, email, usertype, password } = req.body;
-      let approval = usertype === 'flight-operator' ? 'not-approved' : 'approved';
+      if (!username || !email || !usertype || !password) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
 
+      let approval = usertype === 'flight-operator' ? 'not-approved' : 'approved';
       try {
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -61,7 +65,7 @@ mongoose
         const userCreated = await newUser.save();
         return res.status(201).json(userCreated);
       } catch (error) {
-        console.error(error);
+        console.error('❌ Register error:', error);
         return res.status(500).json({ message: 'Server Error' });
       }
     });
@@ -77,7 +81,7 @@ mongoose
 
         return res.json(user);
       } catch (error) {
-        console.error(error);
+        console.error('❌ Login error:', error);
         return res.status(500).json({ message: 'Server Error' });
       }
     });
@@ -202,7 +206,6 @@ mongoose
       }
     });
 
-    // ✅ START SERVER
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
