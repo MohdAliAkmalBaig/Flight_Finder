@@ -1,6 +1,6 @@
 import React, { createContext, useState } from 'react';
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export const GeneralContext = createContext();
 
@@ -11,91 +11,98 @@ const GeneralContextProvider = ({ children }) => {
   const [usertype, setUsertype] = useState('');
   const [ticketBookingDate, setTicketBookingDate] = useState();
 
-  const inputs = { username, email, usertype, password };
   const navigate = useNavigate();
 
-  // ✅ Use deployed backend URL
+  // ✅ Your deployed backend URL
   const BASE_URL = 'https://flight-finder-r7fx.onrender.com';
 
   const login = async () => {
     try {
-      const loginInputs = { email, password };
-      await axios.post(`${BASE_URL}/login`, loginInputs)
-        .then(async (res) => {
-          localStorage.setItem('userId', res.data._id);
-          localStorage.setItem('userType', res.data.usertype);
-          localStorage.setItem('username', res.data.username);
-          localStorage.setItem('email', res.data.email);
+      const res = await axios.post(
+        `${BASE_URL}/login`,
+        { email, password },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true
+        }
+      );
 
-          if (res.data.usertype === 'customer') {
-            navigate('/');
-          } else if (res.data.usertype === 'admin') {
-            navigate('/admin');
-          } else if (res.data.usertype === 'flight-operator') {
-            navigate('/flight-admin');
-          }
-        }).catch((err) => {
-          alert("login failed!!");
-          console.log(err);
-        });
+      const data = res.data;
+      console.log('Login successful:', data);
 
-    } catch (err) {
-      console.log(err);
+      localStorage.setItem('userId', data._id);
+      localStorage.setItem('userType', data.usertype);
+      localStorage.setItem('username', data.username);
+      localStorage.setItem('email', data.email);
+
+      if (data.usertype === 'customer') {
+        navigate('/');
+      } else if (data.usertype === 'admin') {
+        navigate('/admin');
+      } else if (data.usertype === 'flight-operator') {
+        navigate('/flight-admin');
+      }
+    } catch (error) {
+      console.error('Login error:', error.response?.data || error.message);
+      alert('Login failed!');
     }
   };
 
   const register = async () => {
     try {
-      await axios.post(`${BASE_URL}/register`, inputs)
-        .then(async (res) => {
-          localStorage.setItem('userId', res.data._id);
-          localStorage.setItem('userType', res.data.usertype);
-          localStorage.setItem('username', res.data.username);
-          localStorage.setItem('email', res.data.email);
+      const res = await axios.post(
+        `${BASE_URL}/register`,
+        { username, email, usertype, password },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true
+        }
+      );
 
-          if (res.data.usertype === 'customer') {
-            navigate('/');
-          } else if (res.data.usertype === 'admin') {
-            navigate('/admin');
-          } else if (res.data.usertype === 'flight-operator') {
-            navigate('/flight-admin');
-          }
+      const data = res.data;
+      console.log('Registration successful:', data);
 
-        }).catch((err) => {
-          alert("registration failed!!");
-          console.log(err);
-        });
-    } catch (err) {
-      console.log(err);
+      localStorage.setItem('userId', data._id);
+      localStorage.setItem('userType', data.usertype);
+      localStorage.setItem('username', data.username);
+      localStorage.setItem('email', data.email);
+
+      if (data.usertype === 'customer') {
+        navigate('/');
+      } else if (data.usertype === 'admin') {
+        navigate('/admin');
+      } else if (data.usertype === 'flight-operator') {
+        navigate('/flight-admin');
+      }
+    } catch (error) {
+      console.error('Registration error:', error.response?.data || error.message);
+      alert('Registration failed!');
     }
   };
 
-  const logout = async () => {
+  const logout = () => {
     localStorage.clear();
-    for (let key in localStorage) {
-      if (localStorage.hasOwnProperty(key)) {
-        localStorage.removeItem(key);
-      }
-    }
     navigate('/');
   };
 
   return (
-    <GeneralContext.Provider value={{
-      login,
-      register,
-      logout,
-      username,
-      setUsername,
-      email,
-      setEmail,
-      password,
-      setPassword,
-      usertype,
-      setUsertype,
-      ticketBookingDate,
-      setTicketBookingDate
-    }}>
+    <GeneralContext.Provider
+      value={{
+        login,
+        register,
+        logout,
+        username,
+        setUsername,
+        email,
+        setEmail,
+        password,
+        setPassword,
+        usertype,
+        setUsertype,
+        ticketBookingDate,
+        setTicketBookingDate
+      }}
+    >
       {children}
     </GeneralContext.Provider>
   );
