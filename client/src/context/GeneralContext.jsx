@@ -12,11 +12,14 @@ const GeneralContextProvider = ({ children }) => {
   const [ticketBookingDate, setTicketBookingDate] = useState();
 
   const navigate = useNavigate();
-
-  // ✅ Your deployed backend URL
   const BASE_URL = 'https://flight-finder-r7fx.onrender.com';
 
   const login = async () => {
+    if (!email || !password) {
+      alert('Please enter both email and password.');
+      return;
+    }
+
     try {
       const res = await axios.post(
         `${BASE_URL}/login`,
@@ -28,7 +31,7 @@ const GeneralContextProvider = ({ children }) => {
       );
 
       const data = res.data;
-      console.log('Login successful:', data);
+      console.log('✅ Login successful:', data);
 
       localStorage.setItem('userId', data._id);
       localStorage.setItem('userType', data.usertype);
@@ -43,12 +46,17 @@ const GeneralContextProvider = ({ children }) => {
         navigate('/flight-admin');
       }
     } catch (error) {
-      console.error('Login error:', error.response?.data || error.message);
-      alert('Login failed!');
+      console.error('❌ Login error:', error.response?.data || error.message);
+      alert(error.response?.data?.message || 'Login failed!');
     }
   };
 
   const register = async () => {
+    if (!username || !email || !password || !usertype) {
+      alert('All fields are required for registration.');
+      return;
+    }
+
     try {
       const res = await axios.post(
         `${BASE_URL}/register`,
@@ -60,7 +68,7 @@ const GeneralContextProvider = ({ children }) => {
       );
 
       const data = res.data;
-      console.log('Registration successful:', data);
+      console.log('✅ Registration successful:', data);
 
       localStorage.setItem('userId', data._id);
       localStorage.setItem('userType', data.usertype);
@@ -75,8 +83,8 @@ const GeneralContextProvider = ({ children }) => {
         navigate('/flight-admin');
       }
     } catch (error) {
-      console.error('Registration error:', error.response?.data || error.message);
-      alert('Registration failed!');
+      console.error('❌ Registration error:', error.response?.data || error.message);
+      alert(error.response?.data?.message || 'Registration failed!');
     }
   };
 
