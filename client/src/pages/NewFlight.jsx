@@ -3,7 +3,7 @@ import '../styles/NewFlight.css';
 import axios from 'axios';
 
 const NewFlight = () => {
-  const [userDetails, setUserDetails] = useState();
+  const [userDetails, setUserDetails] = useState(null);
 
   useEffect(() => {
     fetchUserData();
@@ -19,7 +19,7 @@ const NewFlight = () => {
     }
   };
 
-  const [flightName, setFlightName] = useState(localStorage.getItem('username') || '');
+  const [flightName] = useState(localStorage.getItem('username') || '');
   const [flightId, setFlightId] = useState('');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
@@ -29,35 +29,39 @@ const NewFlight = () => {
   const [basePrice, setBasePrice] = useState('');
 
   const cityOptions = [
-    'Chennai', 'Banglore', 'Hyderabad', 'Mumbai', 'Indore', 'Delhi',
-    'Pune', 'Trivendrum', 'Bhopal', 'Kolkata', 'varanasi', 'Jaipur'
+    'Chennai', 'Banglore', 'Hyderabad', 'Mumbai', 'Indore',
+    'Delhi', 'Pune', 'Trivendrum', 'Bhopal', 'Kolkata',
+    'varanasi', 'Jaipur'
   ];
 
   const handleSubmit = async () => {
-    // Validation checks
-    const seats = parseInt(totalSeats, 10);
+    const seats = parseInt(totalSeats);
     const price = parseFloat(basePrice);
 
+    // 🛑 Validation
     if (
       !flightId.trim() ||
       !origin ||
       !destination ||
       !startTime ||
       !arrivalTime ||
-      totalSeats === '' ||
-      basePrice === ''
+      isNaN(seats) ||
+      isNaN(price)
     ) {
       alert('Please fill all required fields.');
       return;
     }
 
     if (origin === destination) {
-      alert("Origin and destination cannot be the same.");
+      alert('Origin and destination cannot be the same.');
       return;
     }
 
-    if (isNaN(seats) || isNaN(price) || seats <= 0 || price <= 0) {
-      alert('Seats and price must be valid positive numbers.');
+    const depTime = new Date(`1970-01-01T${startTime}:00`);
+    const arrTime = new Date(`1970-01-01T${arrivalTime}:00`);
+
+    if (arrTime <= depTime) {
+      alert('Arrival time must be after departure time.');
       return;
     }
 
@@ -69,22 +73,21 @@ const NewFlight = () => {
       departureTime: startTime,
       arrivalTime,
       basePrice: price,
-      totalSeats: seats,
+      totalSeats: seats
     };
 
     try {
       await axios.post('https://flight-finder-r7fx.onrender.com/add-flight', inputs);
-      alert('Flight added successfully!');
-
-      // Reset fields
+      alert('✅ Flight added successfully!');
       setFlightId('');
       setOrigin('');
       setDestination('');
       setStartTime('');
       setArrivalTime('');
-      setBasePrice('');
       setTotalSeats('');
+      setBasePrice('');
     } catch (error) {
+      console.error('Flight add error:', error);
       alert('Failed to add flight: ' + (error.response?.data?.message || error.message));
     }
   };
@@ -95,7 +98,7 @@ const NewFlight = () => {
         userDetails.approval === 'not-approved' ? (
           <div className="notApproved-box">
             <h3>Approval Required!!</h3>
-            <p>Your application is under processing. It needs approval from the administrator. Please be patient.</p>
+            <p>Your application is under processing. Please wait for admin approval.</p>
           </div>
         ) : userDetails.approval === 'approved' ? (
           <div className="NewFlightPageContainer">
@@ -107,7 +110,13 @@ const NewFlight = () => {
                 <label>Flight Name</label>
               </div>
               <div className="form-floating mb-3">
-                <input type="text" className="form-control" value={flightId} onChange={(e) => setFlightId(e.target.value)} />
+                <input
+                  type="text"
+                  className="form-control"
+                  value={flightId}
+                  onChange={(e) => setFlightId(e.target.value)}
+                  placeholder="Flight ID"
+                />
                 <label>Flight ID</label>
               </div>
             </span>
@@ -116,12 +125,19 @@ const NewFlight = () => {
               <div className="form-floating mb-3">
                 <select className="form-select" value={origin} onChange={(e) => setOrigin(e.target.value)}>
                   <option value="" disabled>Select</option>
-                  {cityOptions.map(city => <option key={city} value={city}>{city}</option>)}
+                  {cityOptions.map((city) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
                 </select>
                 <label>Departure City</label>
               </div>
               <div className="form-floating mb-3">
-                <input type="time" className="form-control" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                <input
+                  type="time"
+                  className="form-control"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
                 <label>Departure Time</label>
               </div>
             </span>
@@ -130,23 +146,40 @@ const NewFlight = () => {
               <div className="form-floating mb-3">
                 <select className="form-select" value={destination} onChange={(e) => setDestination(e.target.value)}>
                   <option value="" disabled>Select</option>
-                  {cityOptions.map(city => <option key={city} value={city}>{city}</option>)}
+                  {cityOptions.map((city) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
                 </select>
                 <label>Destination City</label>
               </div>
               <div className="form-floating mb-3">
-                <input type="time" className="form-control" value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)} />
+                <input
+                  type="time"
+                  className="form-control"
+                  value={arrivalTime}
+                  onChange={(e) => setArrivalTime(e.target.value)}
+                />
                 <label>Arrival Time</label>
               </div>
             </span>
 
             <span className="newFlightSpan2">
               <div className="form-floating mb-3">
-                <input type="number" className="form-control" value={totalSeats} onChange={(e) => setTotalSeats(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  value={totalSeats}
+                  onChange={(e) => setTotalSeats(e.target.value)}
+                />
                 <label>Total Seats</label>
               </div>
               <div className="form-floating mb-3">
-                <input type="number" className="form-control" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  value={basePrice}
+                  onChange={(e) => setBasePrice(e.target.value)}
+                />
                 <label>Base Price</label>
               </div>
             </span>
