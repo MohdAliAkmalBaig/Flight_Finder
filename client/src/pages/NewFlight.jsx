@@ -34,14 +34,30 @@ const NewFlight = () => {
   ];
 
   const handleSubmit = async () => {
-    // Validate fields
-    if (!flightId || !origin || !destination || !startTime || !arrivalTime || !totalSeats || !basePrice) {
+    // Validation checks
+    const seats = parseInt(totalSeats, 10);
+    const price = parseFloat(basePrice);
+
+    if (
+      !flightId.trim() ||
+      !origin ||
+      !destination ||
+      !startTime ||
+      !arrivalTime ||
+      totalSeats === '' ||
+      basePrice === ''
+    ) {
       alert('Please fill all required fields.');
       return;
     }
 
     if (origin === destination) {
       alert("Origin and destination cannot be the same.");
+      return;
+    }
+
+    if (isNaN(seats) || isNaN(price) || seats <= 0 || price <= 0) {
+      alert('Seats and price must be valid positive numbers.');
       return;
     }
 
@@ -52,8 +68,8 @@ const NewFlight = () => {
       destination,
       departureTime: startTime,
       arrivalTime,
-      basePrice: parseFloat(basePrice),
-      totalSeats: parseInt(totalSeats, 10),
+      basePrice: price,
+      totalSeats: seats,
     };
 
     try {
